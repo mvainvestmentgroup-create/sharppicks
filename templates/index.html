@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SharpPicks Pro — Sports Betting Predictor</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Syne:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/static/css/main.css">
+</head>
+<body>
+<div id="app">
+  <!-- SIDEBAR -->
+  <aside class="sidebar">
+    <div class="logo">
+      <span class="logo-icon">◆</span>
+      <span class="logo-text">SharpPicks</span>
+      <span class="logo-badge">PRO</span>
+    </div>
+    <nav class="nav">
+      <a class="nav-item active" data-page="top10" onclick="navTo('top10',this)">
+        <span class="nav-icon">🏆</span><span>Top 10 Picks</span>
+      </a>
+      <a class="nav-item" data-page="games" onclick="navTo('games',this)">
+        <span class="nav-icon">📅</span><span>Today's Games</span>
+      </a>
+      <a class="nav-item" data-page="parlay" onclick="navTo('parlay',this)">
+        <span class="nav-icon">🎯</span><span>Parlay Builder</span>
+      </a>
+      <a class="nav-item" data-page="injuries" onclick="navTo('injuries',this)">
+        <span class="nav-icon">🏥</span><span>Injuries</span>
+      </a>
+      <a class="nav-item" data-page="ats" onclick="navTo('ats',this)">
+        <span class="nav-icon">📊</span><span>ATS Records</span>
+      </a>
+      <a class="nav-item" data-page="kelly" onclick="navTo('kelly',this)">
+        <span class="nav-icon">💰</span><span>Kelly Sizing</span>
+      </a>
+      <a class="nav-item" data-page="trending" onclick="navTo('trending',this)">
+        <span class="nav-icon">📈</span><span>Trending</span>
+      </a>
+      <a class="nav-item" data-page="apis" onclick="navTo('apis',this)">
+        <span class="nav-icon">🔌</span><span>API Status</span>
+      </a>
+    </nav>
+    <div class="sidebar-footer">
+      <div class="bankroll-widget">
+        <div class="bw-label">Bankroll</div>
+        <div class="bw-val">$<input type="number" id="bankroll-input" value="1000" min="1" oninput="updateBankroll()"></div>
+      </div>
+      <div class="live-badge">
+        <span class="live-dot"></span>Live
+      </div>
+    </div>
+  </aside>
+
+  <!-- MAIN -->
+  <main class="main">
+    <!-- TOP 10 PAGE -->
+    <div class="page active" id="pg-top10">
+      <div class="page-header">
+        <div>
+          <h1>Top 10 Picks Today</h1>
+          <p class="page-sub">Ranked by confidence score · Updated every 5 minutes</p>
+        </div>
+        <button class="btn-refresh" onclick="loadTop10()">↻ Refresh</button>
+      </div>
+      <div class="summary-cards" id="top10-summary"></div>
+      <div class="picks-grid" id="top10-grid">
+        <div class="loading-state"><div class="spinner"></div><p>Analyzing games across all leagues…</p></div>
+      </div>
+    </div>
+
+    <!-- GAMES PAGE -->
+    <div class="page" id="pg-games">
+      <div class="page-header">
+        <div>
+          <h1>Today's Games</h1>
+          <p class="page-sub">All leagues · Click any game to add to parlay</p>
+        </div>
+        <div class="league-tabs" id="league-tabs"></div>
+      </div>
+      <div class="games-list" id="games-list">
+        <div class="loading-state"><div class="spinner"></div><p>Loading games…</p></div>
+      </div>
+    </div>
+
+    <!-- PARLAY BUILDER PAGE -->
+    <div class="page" id="pg-parlay">
+      <div class="page-header">
+        <div>
+          <h1>Parlay Builder</h1>
+          <p class="page-sub">Up to 10 legs · Kelly Criterion sizing included</p>
+        </div>
+      </div>
+      <div class="parlay-layout">
+        <div class="parlay-left">
+          <div class="section-label">Add legs from Today's Games</div>
+          <div class="parlay-game-list" id="parlay-game-list">
+            <div class="loading-state"><div class="spinner"></div><p>Loading…</p></div>
+          </div>
+        </div>
+        <div class="parlay-right">
+          <div class="slip-card">
+            <div class="slip-top">
+              <span class="slip-title">Parlay Slip</span>
+              <span class="slip-count" id="slip-count">0 / 10</span>
+            </div>
+            <div id="slip-legs"><p class="empty-msg">No picks yet</p></div>
+            <div id="slip-math" style="display:none">
+              <div class="slip-stats">
+                <div class="ss-item"><div class="ss-l">Odds</div><div class="ss-v" id="ss-odds">—</div></div>
+                <div class="ss-item"><div class="ss-l">Win prob</div><div class="ss-v" id="ss-prob">—</div></div>
+                <div class="ss-item"><div class="ss-l">EV</div><div class="ss-v" id="ss-ev">—</div></div>
+                <div class="ss-item"><div class="ss-l">Payout</div><div class="ss-v" id="ss-pay">—</div></div>
+              </div>
+              <div class="kelly-box">
+                <div class="kb-title">Kelly Criterion</div>
+                <div class="kb-row">
+                  <span>Wager</span>
+                  <span id="kb-wager" class="kb-val">—</span>
+                </div>
+                <div class="kb-row">
+                  <span>Full Kelly %</span>
+                  <span id="kb-full" class="kb-val">—</span>
+                </div>
+                <div class="kb-row">
+                  <span>¼ Kelly (recommended)</span>
+                  <span id="kb-frac" class="kb-val green">—</span>
+                </div>
+              </div>
+              <div class="verdict-box" id="verdict-box"></div>
+            </div>
+            <div class="slip-wager">
+              <label>Wager ($)</label>
+              <input type="number" id="wager-input" value="10" min="1" oninput="calcParlay()">
+            </div>
+            <button class="btn-analyze" id="analyze-btn" disabled onclick="analyzeParlay()">
+              Analyze with AI ↗
+            </button>
+            <div id="parlay-ai-out"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- INJURIES PAGE -->
+    <div class="page" id="pg-injuries">
+      <div class="page-header">
+        <h1>Injury Reports</h1>
+        <p class="page-sub">Updated from ESPN feeds</p>
+      </div>
+      <div id="injuries-content">
+        <div class="loading-state"><div class="spinner"></div><p>Loading injuries…</p></div>
+      </div>
+    </div>
+
+    <!-- ATS PAGE -->
+    <div class="page" id="pg-ats">
+      <div class="page-header">
+        <h1>ATS Records</h1>
+        <p class="page-sub">Against-the-spread · Season to date</p>
+      </div>
+      <div id="ats-content">
+        <div class="loading-state"><div class="spinner"></div><p>Loading ATS data…</p></div>
+      </div>
+    </div>
+
+    <!-- KELLY PAGE -->
+    <div class="page" id="pg-kelly">
+      <div class="page-header">
+        <h1>Kelly Criterion Calculator</h1>
+        <p class="page-sub">Optimal bet sizing based on edge</p>
+      </div>
+      <div class="kelly-page-layout">
+        <div class="kelly-calc-card">
+          <div class="kc-field"><label>Bankroll ($)</label><input type="number" id="kc-bank" value="1000" oninput="calcKellyPage()"></div>
+          <div class="kc-field"><label>Your odds (American)</label><input type="number" id="kc-odds" value="-110" oninput="calcKellyPage()"></div>
+          <div class="kc-field"><label>Estimated win % (1–99)</label><input type="number" id="kc-win" value="55" min="1" max="99" oninput="calcKellyPage()"></div>
+          <div class="kc-field">
+            <label>Kelly fraction: <span id="kc-frac-val">0.25</span></label>
+            <input type="range" id="kc-frac" min="0.05" max="1" step="0.05" value="0.25" oninput="calcKellyPage();document.getElementById('kc-frac-val').textContent=parseFloat(this.value).toFixed(2)">
+          </div>
+          <div class="kelly-results" id="kelly-results"></div>
+          <div class="kelly-explainer">
+            <strong>How to use Kelly:</strong> Enter the odds you're being offered and your true estimated win probability.
+            The formula tells you the exact % of your bankroll to wager. Use ¼ Kelly (0.25) to reduce volatility.
+            Never bet more than full Kelly. Negative Kelly = no edge, don't bet.
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- TRENDING PAGE -->
+    <div class="page" id="pg-trending">
+      <div class="page-header">
+        <h1>Trending & Sharp Money</h1>
+        <p class="page-sub">Line movements, sharp action, public betting %</p>
+      </div>
+      <div id="trending-content">
+        <div class="loading-state"><div class="spinner"></div><p>Loading trends…</p></div>
+      </div>
+    </div>
+
+    <!-- API STATUS PAGE -->
+    <div class="page" id="pg-apis">
+      <div class="page-header">
+        <h1>API Connections</h1>
+        <p class="page-sub">Configure data sources via Railway environment variables</p>
+      </div>
+      <div id="api-status-content">
+        <div class="loading-state"><div class="spinner"></div><p>Checking APIs…</p></div>
+      </div>
+    </div>
+  </main>
+</div>
+
+<script src="/static/js/main.js"></script>
+</body>
+</html>
