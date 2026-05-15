@@ -6,6 +6,6 @@ RUN pip install --no-cache-dir flask flask-cors requests gunicorn
 
 COPY . .
 
-RUN chmod +x start.sh
+EXPOSE 8080
 
-CMD ["/bin/sh", "start.sh"]
+CMD ["sh", "-c", "gunicorn --chdir backend app:app --bind 0.0.0.0:${PORT} --workers 1 --timeout 120 --log-level debug"]
