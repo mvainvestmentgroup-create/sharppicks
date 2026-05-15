@@ -6,4 +6,6 @@ RUN pip install --no-cache-dir flask flask-cors requests gunicorn
 
 COPY . .
 
-CMD ["python", "start.py"]
+RUN chmod +x start.sh
+
+CMD ["/bin/sh", "start.sh"]
